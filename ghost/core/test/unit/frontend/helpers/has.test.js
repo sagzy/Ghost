@@ -163,6 +163,53 @@ describe('{{#has}} helper', function () {
             fn.called.should.be.true();
             inverse.called.should.be.false();
         });
+
+        describe('start-with pattern', function () {
+            it('matches when all tags start with the given string', function () {
+                thisCtx = {tags: [{name: 'episode-1'}, {name: 'episode-2'}]};
+
+                callHasHelper(thisCtx, {tag: 'start-with:episode-'});
+
+                fn.called.should.be.true();
+                inverse.called.should.be.false();
+            });
+
+            it('matches when one tag starts with the given string', function () {
+                thisCtx = {tags: [{name: 'episode-1'}, {name: 'bar'}]};
+
+                callHasHelper(thisCtx, {tag: 'start-with:episode-'});
+
+                fn.called.should.be.true();
+                inverse.called.should.be.false();
+            });
+
+            it('does not match all no tag starts with the given string', function () {
+                thisCtx = {tags: [{name: 'foo'}, {name: 'bar'}]};
+
+                callHasHelper(thisCtx, {tag: 'start-with:episode-'});
+
+                fn.called.should.be.false();
+                inverse.called.should.be.true();
+            });
+
+            it('does not match when given an empty string', function () {
+                thisCtx = {tags: [{name: 'foo'}, {name: 'bar'}]};
+
+                callHasHelper(thisCtx, {tag: 'start-with:'});
+
+                fn.called.should.be.false();
+                inverse.called.should.be.true();
+            });
+
+            it('does not match on an empty array of tags', function () {
+                thisCtx = {tags: []};
+
+                callHasHelper(thisCtx, {tag: 'start-with:episode-'});
+
+                fn.called.should.be.false();
+                inverse.called.should.be.true();
+            });
+        });
     });
 
     describe('author match', function () {

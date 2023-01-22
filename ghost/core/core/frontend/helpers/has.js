@@ -13,6 +13,8 @@ const messages = {
     invalidAttribute: 'Invalid or no attribute given to has helper'
 };
 
+const START_WITH = /start-with:(.+)/;
+
 function handleCount(ctxAttr, data) {
     if (!data || !_.isFinite(data.length)) {
         return false;
@@ -31,6 +33,26 @@ function handleCount(ctxAttr, data) {
     }
 
     return false;
+}
+
+/**
+ *
+ * @param {string} ctxAttr - The input string to search for
+ * @param {Array} data - The array of attrributes to check against
+ * @returns {boolean} - Whether any attribute start with the input string
+ */
+function handleStartWith(ctxAttr, data) {
+    // Return false if `data` is null, undefined, not an array or an empty array
+    if (!data || !Array.isArray(data) || !data.length) {
+        return false;
+    }
+
+    // Search whether any of the attributes start with the input string
+    const search = ctxAttr.match(START_WITH)[1];
+    const regex = new RegExp(`${search}(.*)`);
+    return data.some((item) => {
+        return item.name.match(regex);
+    });
 }
 
 function evaluateTagList(expr, tags) {
@@ -53,6 +75,10 @@ function handleTag(data, attrs) {
 
     if (attrs.tag.match(/count:/)) {
         return handleCount(attrs.tag, data.tags);
+    }
+
+    if (attrs.tag.match(START_WITH)) {
+        return handleStartWith(attrs.tag, data.tags);
     }
 
     return evaluateTagList(attrs.tag, _.map(data.tags, 'name')) || false;
