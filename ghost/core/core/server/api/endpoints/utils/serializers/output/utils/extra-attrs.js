@@ -1,5 +1,20 @@
 const readingMinutes = require('@tryghost/helpers').utils.readingMinutes;
 
+/**
+ *
+ * @param {Object} model - Post model
+ * @param {Object} attrs - Post attributes
+ * @param {(string|null)} attrs.html
+ * @param {(string|null)} attrs.feature_image
+ * @returns {number} - Reading time in minutes
+ */
+const calculateReadingTime = (model, attrs) => {
+    const html = attrs.html || model.get('html');
+    const additionalImages = attrs.feature_image ? 1 : 0;
+
+    return readingMinutes(html, additionalImages);
+};
+
 module.exports.forPost = (frame, model, attrs) => {
     const _ = require('lodash');
     // This function is split up in 3 conditions for 3 different purposes:
@@ -51,17 +66,26 @@ module.exports.forPost = (frame, model, attrs) => {
         }
     }
 
-    // reading_time still only works when used along with formats=html.
+    // `reading_time` attribute
+    //
+    // If no column was requested, include `reading_time`
+    if (!Object.prototype.hasOwnProperty.call(frame.options, 'columns')) {
+        attrs.reading_time = calculateReadingTime(model, attrs);
+    }
 
-    if (!Object.prototype.hasOwnProperty.call(frame.options, 'columns') ||
-        (frame.options.columns.includes('reading_time'))) {
-        if (attrs.html) {
-            let additionalImages = 0;
+    // `reading_time` attribute
+    //
+    // If `reading_time` was requested:
+    // - include `reading_time`
+    // - delete `html` unless it was explicitly requested
+    if (frame.options.columns?.includes('reading_time')) {
+        attrs.reading_time = calculateReadingTime(model, attrs);
 
-            if (attrs.feature_image) {
-                additionalImages += 1;
-            }
-            attrs.reading_time = readingMinutes(attrs.html, additionalImages);
+        const htmlInColumns = frame.options.columns && frame.options.columns.includes('html');
+        const htmlInFormats = frame.options.formats && frame.options.formats.includes('html');
+
+        if (!htmlInColumns && !htmlInFormats) {
+            delete attrs.html;
         }
     }
 };

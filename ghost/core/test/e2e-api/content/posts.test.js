@@ -5,7 +5,7 @@ const testUtils = require('../../utils');
 const models = require('../../../core/server/models');
 
 const {agentProvider, fixtureManager, matchers} = require('../../utils/e2e-framework');
-const {anyArray, anyContentVersion, anyEtag, anyUuid, anyISODateTimeWithTZ} = matchers;
+const {anyArray, anyContentVersion, anyEtag, anyUuid, anyISODateTimeWithTZ, anyNumber, anyString} = matchers;
 
 const postMatcher = {
     published_at: anyISODateTimeWithTZ,
@@ -157,6 +157,56 @@ describe('Posts Content API', function () {
                 etag: anyEtag
             })
             .matchBodySnapshot();
+    });
+
+    it('Can request `reading_time` field from posts', async function () {
+        await agent
+            .get('posts/?fields=reading_time')
+            .expectStatus(200)
+            .matchHeaderSnapshot({
+                'content-version': anyContentVersion,
+                etag: anyEtag
+            })
+            .matchBodySnapshot({
+                posts: new Array(11)
+                    .fill({
+                        reading_time: anyNumber
+                    })
+            });
+    });
+
+    it('Can request `reading_time` and `html` fields from posts', async function () {
+        await agent
+            .get('posts/?fields=reading_time,html')
+            .expectStatus(200)
+            .matchHeaderSnapshot({
+                'content-version': anyContentVersion,
+                etag: anyEtag
+            })
+            .matchBodySnapshot({
+                posts: new Array(11)
+                    .fill({
+                        reading_time: anyNumber,
+                        html: anyString
+                    })
+            });
+    });
+
+    it('Can request `reading_time` field from posts in `html` format', async function () {
+        await agent
+            .get('posts/?fields=reading_time&formats=html')
+            .expectStatus(200)
+            .matchHeaderSnapshot({
+                'content-version': anyContentVersion,
+                etag: anyEtag
+            })
+            .matchBodySnapshot({
+                posts: new Array(11)
+                    .fill({
+                        reading_time: anyNumber,
+                        html: anyString
+                    })
+            });
     });
 
     it('Can include relations', async function () {

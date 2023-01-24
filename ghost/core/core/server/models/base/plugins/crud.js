@@ -7,14 +7,34 @@ const messages = {
     couldNotUnderstandRequest: 'Could not understand request.'
 };
 
-// If user requested an excerpt we need to ensure plaintext and custom_excerpt is also included so we can include it when we query the database.
-const requiredForExcerpt = (requestedColumns) => {
-    if (requestedColumns){
-        if (requestedColumns.includes('excerpt') && !requestedColumns.includes('plaintext') && !requestedColumns.includes('plaintext') || !requestedColumns) {
-            requestedColumns.push('plaintext');
-            requestedColumns.push('custom_excerpt');
+/**
+ *
+ * @param {(string[]|null)} cols - Columns to fetch from the database
+ * @returns {(string[]|null)} - Modified array with additional required columns
+ */
+const addRequiredColumns = (cols) => {
+    if (!cols) {
+        return cols;
+    }
+
+    // When `excerpt` is requested, make sure to also fetch `plaintext` and `custom_excerpt`
+    if (cols.includes('excerpt')) {
+        if (!cols.includes('plaintext')) {
+            cols.push('plaintext');
+        }
+        if (!cols.includes('custom_excerpt')) {
+            cols.push('custom_excerpt');
         }
     }
+
+    // When `reading_time` is requested, make sure to also fetch `html`
+    if (cols.includes('reading_time')) {
+        if (!cols.includes('html')) {
+            cols.push('html');
+        }
+    }
+
+    return cols;
 };
 
 /**
@@ -81,9 +101,9 @@ module.exports = function (Bookshelf) {
         findPage: async function findPage(unfilteredOptions) {
             const options = this.filterOptions(unfilteredOptions, 'findPage');
             const itemCollection = this.getFilteredCollection(options);
-            const requestedColumns = options.columns;
-            // make sure we include plaintext and custom_excerpt if excerpt is requested
-            requiredForExcerpt(requestedColumns);
+
+            // Include additional required columns
+            const requestedColumns = addRequiredColumns(options.columns);
 
             // Set this to true or pass ?debug=true as an API option to get output
             itemCollection.debug = unfilteredOptions.debug && process.env.NODE_ENV !== 'production';
@@ -150,9 +170,9 @@ module.exports = function (Bookshelf) {
             const options = this.filterOptions(unfilteredOptions, 'findOne');
             data = this.filterData(data);
             const model = this.forge(data);
-            const requestedColumns = options.columns;
-            // make sure we include plaintext and custom_excerpt if excerpt is requested
-            requiredForExcerpt(requestedColumns);
+
+            // Include additional required columns
+            addRequiredColumns(options.columns);
 
             // @NOTE: The API layer decides if this option is allowed
             if (options.filter) {
