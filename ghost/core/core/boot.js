@@ -235,6 +235,15 @@ async function initExpressApps({frontend, backend, config}) {
     return parentApp;
 }
 
+async function initWebSockets() {
+    debug('Begin: initWebSockets');
+
+    const websockets = require('./server/websockets');
+    websockets.init();
+
+    debug('End: initWebSockets');
+}
+
 /**
  * Dynamic routing is generated from the routes.yaml file
  * When Ghost's DB and core are loaded, we can access this file and call routing.routingManager.start
@@ -459,6 +468,8 @@ async function bootGhost({backend = true, frontend = true, server = true} = {}) 
             await initFrontend(dataService);
         }
         const ghostApp = await initExpressApps({frontend, backend, config});
+
+        await initWebSockets();
 
         if (frontend) {
             await initDynamicRouting();
